@@ -1,5 +1,4 @@
 
-
 import { db } from "./firebaseConfig";
 import {
   collection,
@@ -12,17 +11,35 @@ import {
   serverTimestamp,
   getDoc,
 } from "firebase/firestore";
-import { generateMissions, calculateAdjustedDifficulty, generateRoadmap } from "./aiService";
+import {
+  analyzeGoal,
+  generateMissions,
+  calculateAdjustedDifficulty,
+  generateRoadmap,
+} from "./aiService";
  
 /**
- * 파일럿 목표 생성 (로드맵 포함)
+ * 파일럿 목표 생성 (목표 분석 + 로드맵 포함)
  */
 export const createPilotGoal = async (userId, goalData) => {
   try {
-    // 1. 로드맵 생성
-    const roadmap = await generateRoadmap(goalData.title, goalData.duration_months);
+    console.log("🚀 목표 생성 시작:", goalData.title);
  
-    // 2. Firestore에 저장
+    // 1. 목표 분석
+    console.log("📊 목표 분석 중...");
+    const goalAnalysis = await analyzeGoal(goalData.title);
+    console.log("✅ 목표 분석 완료:", goalAnalysis);
+ 
+    // 2. 로드맵 생성 (목표 분석 결과 기반)
+    console.log("🗺️ 로드맵 생성 중...");
+    const roadmap = await generateRoadmap(
+      goalData.title,
+      goalData.duration_months,
+      goalAnalysis
+    );
+    console.log("✅ 로드맵 생성 완료:", roadmap.length, "주");
+ 
+    // 3. Firestore에 저장
     const goalsRef = collection(db, "pilot_goals");
     const docRef = await addDoc(goalsRef, {
       userId,
@@ -30,6 +47,7 @@ export const createPilotGoal = async (userId, goalData) => {
       description: goalData.description,
       theme: goalData.theme,
       duration_months: goalData.duration_months,
+      goalAnalysis, // ← 목표 분석 결과 저장
       roadmap, // ← 로드맵 저장
       pilot_start_date: new Date(),
       pilot_end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
@@ -39,10 +57,10 @@ export const createPilotGoal = async (userId, goalData) => {
       createdAt: serverTimestamp(),
     });
  
-    console.log("✅ 로드맵 생성 완료:", roadmap.length, "주");
+    console.log("✅ 목표 생성 완료:", docRef.id);
     return docRef.id;
   } catch (error) {
-    console.error("Create pilot goal error:", error);
+    console.error("❌ Create pilot goal error:", error);
     throw error;
   }
 };
@@ -73,7 +91,7 @@ export const getPilotGoal = async (userId) => {
 };
  
 /**
- * 사용자의 모든 파일럿 목표 조회 (여러 개)
+ * 사용자의 모든 파일럿 목표 조회
  */
 export const getPilotGoals = async (userId) => {
   try {
@@ -106,7 +124,7 @@ const calculateCurrentWeek = (startDate) => {
   const diffTime = Math.abs(today - start);
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const week = Math.floor(diffDays / 7) + 1;
-  return Math.max(1, Math.min(12, week)); // 1~12주 범위
+  return Math.max(1, Math.min(12, week));
 };
  
 /**
@@ -138,18 +156,19 @@ const getRecentMissions = async (userId, goalId, days = 3) => {
 };
  
 /**
- * 오늘의 미션 생성 및 저장 (goalId 기반)
+ * 오늘의 미션 생성 및 저장 (목표 분석 결과 기반)
  */
 export const generateAndSaveTodayMissions = async (userId, goalId) => {
   try {
     const goalRef = doc(db, "pilot_goals", goalId);
     const goalDoc = await getDoc(goalRef);
-    
+ 
     if (!goalDoc.exists()) {
       throw new Error("Goal not found");
     }
-    
+ 
     const goal = { id: goalDoc.id, ...goalDoc.data() };
+    console.log("📌 목표 조회:", goal.title);
  
     // 1. 현재 주차 계산
     const currentWeek = calculateCurrentWeek(goal.pilot_start_date);
@@ -163,13 +182,14 @@ export const generateAndSaveTodayMissions = async (userId, goalId) => {
     const currentDifficulty = calculateAdjustedDifficulty(goal.feedback_history);
     console.log(`⭐ 난이도: ${currentDifficulty}/5`);
  
-    // 4. 미션 생성 (로드맵 + 현재주차 + 이전미션 정보 포함)
+    // 4. 미션 생성 (목표 분석 결과 포함)
     const missions = await generateMissions(
       goal.title,
-      goal.roadmap || [], // 로드맵 전달
-      currentWeek,         // 현재 주차
-      recentMissions,      // 이전 미션들 (다양성 보장)
-      currentDifficulty    // 난이도
+      goal.roadmap || [],
+      currentWeek,
+      recentMissions,
+      currentDifficulty,
+      goal.goalAnalysis // ← 목표 분석 결과 전달
     );
  
     // 5. 미션 저장
@@ -185,9 +205,10 @@ export const generateAndSaveTodayMissions = async (userId, goalId) => {
         order: i + 1,
         title: missions[i].title,
         description: missions[i].description,
-        activity_type: missions[i].activity_type, // ← 활동 유형 추가
+        activity_type: missions[i].activity_type,
         duration_minutes: missions[i].duration_minutes,
         difficulty: missions[i].difficulty,
+        measurement: missions[i].measurement, // ← 완료 기준 저장
         status: "pending",
         feedback: null,
         createdAt: serverTimestamp(),
@@ -206,13 +227,13 @@ export const generateAndSaveTodayMissions = async (userId, goalId) => {
     console.log(`✅ ${missions.length}개 미션 생성 완료`);
     return missionIds;
   } catch (error) {
-    console.error("Generate missions error:", error);
+    console.error("❌ Generate missions error:", error);
     throw error;
   }
 };
  
 /**
- * 오늘의 미션 조회 (goalId로 필터링)
+ * 오늘의 미션 조회
  */
 export const getTodayMissions = async (userId, goalId) => {
   try {
@@ -266,14 +287,14 @@ export const saveMissionFeedback = async (missionId, goalId, userId, feedback) =
  
     const goalRef = doc(db, "pilot_goals", goalId);
     const goal = await getDoc(goalRef);
-    
+ 
     if (!goal.exists()) {
       throw new Error("Goal not found");
     }
-    
+ 
     const goalData = goal.data();
     const updatedFeedbackHistory = [...(goalData.feedback_history || []), feedback];
-    
+ 
     await updateDoc(goalRef, {
       feedback_history: updatedFeedbackHistory,
     });
@@ -287,7 +308,7 @@ export const saveMissionFeedback = async (missionId, goalId, userId, feedback) =
 };
  
 /**
- * 파일럿 통계 조회 (단일 목표 기반)
+ * 파일럿 통계 조회
  */
 export const getPilotStats = async (userId) => {
   try {
@@ -313,15 +334,22 @@ export const getPilotStats = async (userId) => {
     const upCount = feedbacks.filter(f => f === "up").length;
  
     const currentWeek = calculateCurrentWeek(goal.pilot_start_date);
-    const weekFocus = goal.roadmap && goal.roadmap[currentWeek - 1]
-      ? goal.roadmap[currentWeek - 1].focus
-      : "목표 달성";
+    const weekData = goal.roadmap && goal.roadmap[currentWeek - 1];
+    const weekFocus = weekData ? weekData.focus : "목표 달성";
+ 
+    // 목표 분석 정보도 포함
+    const goalAnalysis = goal.goalAnalysis || {};
  
     return {
       goal: goal.title,
+      goalType: goalAnalysis.goal_type || "일반",
+      strategies: goalAnalysis.strategies || [],
+      keyMetrics: goalAnalysis.key_metrics || "매일 체크",
       currentWeek,
       weekFocus,
-      totalDays: Math.ceil((goal.pilot_end_date - goal.pilot_start_date) / (24 * 60 * 60 * 1000)),
+      totalDays: Math.ceil(
+        (goal.pilot_end_date - goal.pilot_start_date) / (24 * 60 * 60 * 1000)
+      ),
       totalMissions,
       completedMissions,
       completionRate: completionRate.toFixed(1),
@@ -338,9 +366,3 @@ export const getPilotStats = async (userId) => {
   }
 };
  
-
-
-
-
-
-
