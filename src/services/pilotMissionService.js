@@ -1,4 +1,4 @@
-
+import { getMissionsForGoal } from "./missionData";
 import { db } from "./firebaseConfig";
 import {
   collection,
@@ -180,53 +180,30 @@ export const generateAndSaveTodayMissions = async (userId, goalId) => {
   try {
     const goalRef = doc(db, "pilot_goals", goalId);
     const goalDoc = await getDoc(goalRef);
- 
+
     if (!goalDoc.exists()) {
       throw new Error("Goal not found");
     }
- 
+
     const goal = { id: goalDoc.id, ...goalDoc.data() };
     console.log("📌 목표 조회:", goal.title);
- 
-    // 1. 현재 주차 계산
-    const currentWeek = calculateCurrentWeek(goal.pilot_start_date);
-    console.log(`📅 현재 주차: ${currentWeek}주`);
- 
-    // 2. 지난 미션 조회 (다양성 보장)
-    const recentMissions = await getRecentMissions(userId, goalId, 3);
-    console.log(`📝 지난 3일 미션: ${recentMissions.length}개`);
- 
-    // 3. 난이도 계산
-    const currentDifficulty = calculateAdjustedDifficulty(goal.feedback_history);
-    console.log(`⭐ 난이도: ${currentDifficulty}/5`);
- 
-    // 4. 미션 생성 (API 호출)
-    console.log("🎬 미션 생성 API 호출 중...");
-    const missionsResponse = await fetch("/api/generateMissions", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        goal: goal.title,
-        roadmap: goal.roadmap || [],
-        currentWeek,
-        previousMissions: recentMissions,
-        difficulty: currentDifficulty,
-        goalAnalysis: goal.goalAnalysis || null,
-      }),
-    });
- 
-    if (!missionsResponse.ok) {
-      throw new Error("Mission generation API error");
+
+    // 하드코딩된 미션 데이터 가져오기
+    const missionData = getMissionsForGoal(goal.title);
+    
+    if (!missionData) {
+      throw new Error("Mission data not found");
     }
- 
-    const missionsData = await missionsResponse.json();
-    const missions = missionsData.missions || [];
-    console.log("✅ 미션 생성 완료:", missions.length, "개");
- 
-    // 5. 미션 저장
+
+    const missions = missionData.missions;
+    const roadmap = missionData.roadmap;
+
+    console.log("✅ 미션 로드 완료:", missions.length, "개");
+
+    // 오늘의 미션 저장
     const today = new Date().toISOString().split("T")[0];
     const missionsRef = collection(db, "pilot_missions");
- 
+
     const missionIds = [];
     for (let i = 0; i < missions.length; i++) {
       const missionRef = await addDoc(missionsRef, {
@@ -246,61 +223,18 @@ export const generateAndSaveTodayMissions = async (userId, goalId) => {
       });
       missionIds.push(missionRef.id);
     }
- 
-    // 6. 목표 정보 업데이트
+
+    // 목표 정보 업데이트 (로드맵 추가)
     const goalUpdateRef = doc(db, "pilot_goals", goal.id);
     await updateDoc(goalUpdateRef, {
-      current_difficulty: currentDifficulty,
-      current_week: currentWeek,
+      roadmap: roadmap,
       last_mission_date: today,
     });
- 
+
     console.log(`✅ ${missions.length}개 미션 생성 완료`);
     return missionIds;
   } catch (error) {
     console.error("❌ Generate missions error:", error);
-    throw error;
-  }
-};
- 
-/**
- * 오늘의 미션 조회
- */
-export const getTodayMissions = async (userId, goalId) => {
-  try {
-    const today = new Date().toISOString().split("T")[0];
- 
-    const q = query(
-      collection(db, "pilot_missions"),
-      where("userId", "==", userId),
-      where("goalId", "==", goalId),
-      where("date", "==", today)
-    );
- 
-    const querySnapshot = await getDocs(q);
-    const missions = querySnapshot.docs.map(doc => ({
-      id: doc.id,
-      ...doc.data(),
-    }));
- 
-    return missions.sort((a, b) => a.order - b.order);
-  } catch (error) {
-    console.error("Get today missions error:", error);
-    return [];
-  }
-};
- 
-/**
- * 미션 완료 처리
- */
-export const completeMission = async (missionId) => {
-  try {
-    const missionRef = doc(db, "pilot_missions", missionId);
-    await updateDoc(missionRef, {
-      status: "completed",
-    });
-  } catch (error) {
-    console.error("Complete mission error:", error);
     throw error;
   }
 };
