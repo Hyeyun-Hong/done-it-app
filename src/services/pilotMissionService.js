@@ -37,26 +37,6 @@ export const createPilotGoal = async (userId, goalData) => {
     const goalAnalysis = await analysisResponse.json();
     console.log("✅ 목표 분석 완료:", goalAnalysis);
  
-    // 2. 로드맵 생성 (API 호출)
-    console.log("🗺️ 로드맵 생성 중...");
-    const roadmapResponse = await fetch("/api/generateRoadmap", {
-      method: "POST",
-      headers: { "content-type": "application/json" },
-      body: JSON.stringify({
-        goal: goalData.title,
-        durationMonths: goalData.duration_months,
-        goalAnalysis,
-      }),
-    });
- 
-    if (!roadmapResponse.ok) {
-      throw new Error("Roadmap generation API error");
-    }
- 
-    const roadmapData = await roadmapResponse.json();
-    const roadmap = roadmapData.roadmap || [];
-    console.log("✅ 로드맵 생성 완료:", roadmap.length, "주");
- 
     // 3. Firestore에 저장
     const goalsRef = collection(db, "pilot_goals");
     const docRef = await addDoc(goalsRef, {
