@@ -14,30 +14,20 @@ export default async function handler(req, res) {
 사용자의 목표: "${goal}"
 기간: ${durationMonths}개월 (약 ${estimatedWeeks}주)
 핵심 전략: ${strategies.join(", ")}
-난이도 특성: ${difficulty}
  
-이 목표를 달성하기 위한 주간별 로드맵을 작성해줘.
-각 주는 **구체적인 행동 계획**을 포함해야 함.
+주간별 로드맵을 작성해줘. 각 주는 구체적인 행동 계획을 포함해야 함.
  
-다음 JSON 형식으로만 응답:
+반드시 다음 JSON 형식으로만 응답:
 \`\`\`json
 {
   "roadmap": [
-    {
-      "week": 1,
-      "phase": "단계 이름",
-      "focus": "이 주의 핵심 목표",
-      "activities": ["구체적 활동1", "구체적 활동2"]
-    }
+    {"week": 1, "phase": "기초", "focus": "기초 체력 구축", "activities": ["활동1", "활동2"]},
+    {"week": 2, "phase": "기초", "focus": "기초 체력 강화", "activities": ["활동1", "활동2"]}
   ]
 }
 \`\`\`
  
-예시 (체지방 3% 감량, 8주):
-- 1-2주: 기초 체력 구축 (유산소 20분 + 간단한 스트레칭)
-- 3-4주: 운동 강화 (유산소 30분 + 근력운동 시작)
-- 5-6주: 강도 상향 (고강도 유산소 + 중강도 근력운동)
-- 7-8주: 마무리 및 체지방 감량 집중
+${estimatedWeeks}주 분량의 로드맵을 만들어줘.
   `;
  
   try {
@@ -49,39 +39,51 @@ export default async function handler(req, res) {
       },
       body: JSON.stringify({
         model: "claude-sonnet-4-6",
-        max_tokens: 2500,
+        max_tokens: 3000,
         messages: [{ role: "user", content: prompt }],
       }),
     });
  
     const data = await response.json();
+    console.log("API Response:", JSON.stringify(data).substring(0, 500));
  
-    if (!data.content || !data.content[0]) {
-      throw new Error("Invalid response format");
+    if (!data.content || data.content.length === 0) {
+      throw new Error("No content in response");
     }
  
-    const content = data.content[0].text;
+    const textContent = data.content.find((c) => c.type === "text");
+    if (!textContent) {
+      throw new Error("No text content found");
+    }
+ 
+    const content = textContent.text;
     const jsonMatch = content.match(/```json\n?([\s\S]*?)\n?```/);
  
-    if (!jsonMatch) {
-      throw new Error("Failed to parse JSON");
+    if (!jsonMatch || !jsonMatch[1]) {
+      console.error("Failed to parse JSON from:", content.substring(0, 200));
+      throw new Error("JSON not found in response");
     }
  
     const roadmapData = JSON.parse(jsonMatch[1]);
+    
+    if (!roadmapData.roadmap || !Array.isArray(roadmapData.roadmap)) {
+      throw new Error("Invalid roadmap structure");
+    }
+ 
     return res.status(200).json(roadmapData);
   } catch (error) {
-    console.error("Roadmap generation error:", error);
+    console.error("Roadmap generation error:", error.message);
  
-    // 기본 로드맵
+    // Fallback
     const weeksTotal = estimatedWeeks || durationMonths * 4;
     const roadmap = [];
  
-    for (let i = 1; i <= weeksTotal; i++) {
+    for (let i = 1; i <= Math.min(weeksTotal, 12); i++) {
       const phase = Math.ceil((i / weeksTotal) * 4);
       const phaseNames = ["기초", "심화", "실전", "완성"];
       roadmap.push({
         week: i,
-        phase: phaseNames[phase - 1],
+        phase: phaseNames[phase - 1] || "기초",
         focus: `${phaseNames[phase - 1]} 단계`,
         activities: ["기본 활동"],
       });
