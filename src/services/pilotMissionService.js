@@ -138,7 +138,7 @@ export const getPilotGoals = async (userId) => {
  */
 const calculateCurrentWeek = (startDate) => {
   const today = new Date();
-  const start = new Date(startDate);
+  const start = startDate?.toDate ? startDate.toDate() : new Date(startDate);
   const diffTime = Math.abs(today - start);
   const diffDays = Math.ceil(diffTime / (1000 * 60 * 60 * 24));
   const week = Math.floor(diffDays / 7) + 1;
