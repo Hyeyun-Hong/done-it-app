@@ -12,10 +12,7 @@ import {
   getDoc,
 } from "firebase/firestore";
 import {
-  analyzeGoal,
-  generateMissions,
   calculateAdjustedDifficulty,
-  generateRoadmap,
 } from "./aiService";
  
 /**
@@ -25,18 +22,39 @@ export const createPilotGoal = async (userId, goalData) => {
   try {
     console.log("🚀 목표 생성 시작:", goalData.title);
  
-    // 1. 목표 분석
+    // 1. 목표 분석 (API 호출)
     console.log("📊 목표 분석 중...");
-    const goalAnalysis = await analyzeGoal(goalData.title);
+    const analysisResponse = await fetch("/api/analyzeGoal", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({ goal: goalData.title }),
+    });
+ 
+    if (!analysisResponse.ok) {
+      throw new Error("Goal analysis API error");
+    }
+ 
+    const goalAnalysis = await analysisResponse.json();
     console.log("✅ 목표 분석 완료:", goalAnalysis);
  
-    // 2. 로드맵 생성 (목표 분석 결과 기반)
+    // 2. 로드맵 생성 (API 호출)
     console.log("🗺️ 로드맵 생성 중...");
-    const roadmap = await generateRoadmap(
-      goalData.title,
-      goalData.duration_months,
-      goalAnalysis
-    );
+    const roadmapResponse = await fetch("/api/generateRoadmap", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        goal: goalData.title,
+        durationMonths: goalData.duration_months,
+        goalAnalysis,
+      }),
+    });
+ 
+    if (!roadmapResponse.ok) {
+      throw new Error("Roadmap generation API error");
+    }
+ 
+    const roadmapData = await roadmapResponse.json();
+    const roadmap = roadmapData.roadmap || [];
     console.log("✅ 로드맵 생성 완료:", roadmap.length, "주");
  
     // 3. Firestore에 저장
@@ -47,8 +65,8 @@ export const createPilotGoal = async (userId, goalData) => {
       description: goalData.description,
       theme: goalData.theme,
       duration_months: goalData.duration_months,
-      goalAnalysis, // ← 목표 분석 결과 저장
-      roadmap, // ← 로드맵 저장
+      goalAnalysis,
+      roadmap,
       pilot_start_date: new Date(),
       pilot_end_date: new Date(Date.now() + 7 * 24 * 60 * 60 * 1000),
       status: "active",
@@ -182,15 +200,28 @@ export const generateAndSaveTodayMissions = async (userId, goalId) => {
     const currentDifficulty = calculateAdjustedDifficulty(goal.feedback_history);
     console.log(`⭐ 난이도: ${currentDifficulty}/5`);
  
-    // 4. 미션 생성 (목표 분석 결과 포함)
-    const missions = await generateMissions(
-      goal.title,
-      goal.roadmap || [],
-      currentWeek,
-      recentMissions,
-      currentDifficulty,
-      goal.goalAnalysis // ← 목표 분석 결과 전달
-    );
+    // 4. 미션 생성 (API 호출)
+    console.log("🎬 미션 생성 API 호출 중...");
+    const missionsResponse = await fetch("/api/generateMissions", {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify({
+        goal: goal.title,
+        roadmap: goal.roadmap || [],
+        currentWeek,
+        previousMissions: recentMissions,
+        difficulty: currentDifficulty,
+        goalAnalysis: goal.goalAnalysis || null,
+      }),
+    });
+ 
+    if (!missionsResponse.ok) {
+      throw new Error("Mission generation API error");
+    }
+ 
+    const missionsData = await missionsResponse.json();
+    const missions = missionsData.missions || [];
+    console.log("✅ 미션 생성 완료:", missions.length, "개");
  
     // 5. 미션 저장
     const today = new Date().toISOString().split("T")[0];
@@ -208,7 +239,7 @@ export const generateAndSaveTodayMissions = async (userId, goalId) => {
         activity_type: missions[i].activity_type,
         duration_minutes: missions[i].duration_minutes,
         difficulty: missions[i].difficulty,
-        measurement: missions[i].measurement, // ← 완료 기준 저장
+        measurement: missions[i].measurement,
         status: "pending",
         feedback: null,
         createdAt: serverTimestamp(),
@@ -337,7 +368,6 @@ export const getPilotStats = async (userId) => {
     const weekData = goal.roadmap && goal.roadmap[currentWeek - 1];
     const weekFocus = weekData ? weekData.focus : "목표 달성";
  
-    // 목표 분석 정보도 포함
     const goalAnalysis = goal.goalAnalysis || {};
  
     return {
@@ -366,3 +396,9 @@ export const getPilotStats = async (userId) => {
   }
 };
  
+
+
+
+
+
+
