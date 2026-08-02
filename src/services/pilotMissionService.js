@@ -13,6 +13,35 @@ import {
 import { getMissionsForGoal } from "./missionData";
 
 /**
+ * 난이도 계산 (피드백 기반)
+ */
+const calculateDifficulty = (feedbackHistory) => {
+  if (!feedbackHistory || feedbackHistory.length === 0) {
+    return 2; // 기본값
+  }
+
+  const recentFeedback = feedbackHistory.slice(-3);
+  let score = 0;
+
+  recentFeedback.forEach(feedback => {
+    if (feedback === "down") score -= 1;
+    else if (feedback === "good") score += 0;
+    else if (feedback === "up") score += 1;
+  });
+
+  const avgScore = score / recentFeedback.length;
+  let difficulty = 2;
+
+  if (avgScore <= -0.5) {
+    difficulty = Math.max(1, difficulty - 1);
+  } else if (avgScore >= 0.5) {
+    difficulty = Math.min(3, difficulty + 1);
+  }
+
+  return difficulty;
+};
+
+/**
  * 파일럿 목표 생성
  */
 export const createPilotGoal = async (userId, goalData) => {
@@ -93,7 +122,7 @@ export const getPilotGoals = async (userId) => {
 };
 
 /**
- * 오늘의 미션 생성 및 저장 (하드코딩 미션)
+ * 오늘의 미션 생성 및 저장 (난이도별 반영)
  */
 export const generateAndSaveTodayMissions = async (userId, goalId) => {
   try {
@@ -107,8 +136,12 @@ export const generateAndSaveTodayMissions = async (userId, goalId) => {
     const goal = { id: goalDoc.id, ...goalDoc.data() };
     console.log("📌 목표 조회:", goal.title);
 
-    // 하드코딩된 미션 데이터 가져오기
-    const missionData = getMissionsForGoal(goal.title);
+    // 난이도 계산 (피드백 기반)
+    const difficulty = calculateDifficulty(goal.feedback_history || []);
+    console.log(`⭐ 난이도: ${difficulty}/3`);
+
+    // 난이도별 미션 데이터 가져오기
+    const missionData = getMissionsForGoal(goal.title, difficulty);
 
     if (!missionData) {
       console.log("⚠️ 매칭되는 미션 없음. 기본값 사용");
@@ -128,7 +161,7 @@ export const generateAndSaveTodayMissions = async (userId, goalId) => {
       var roadmap = missionData.roadmap;
     }
 
-    console.log("✅ 미션 로드 완료:", missions.length, "개");
+    console.log("✅ 미션 로드 완료:", missions.length, "개 (난이도", difficulty, ")");
 
     // 오늘의 미션 저장
     const today = new Date().toISOString().split("T")[0];
@@ -158,6 +191,7 @@ export const generateAndSaveTodayMissions = async (userId, goalId) => {
     const goalUpdateRef = doc(db, "pilot_goals", goal.id);
     await updateDoc(goalUpdateRef, {
       roadmap: roadmap,
+      current_difficulty: difficulty,
       last_mission_date: today,
     });
 
