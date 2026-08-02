@@ -175,7 +175,94 @@ export const missionDatabase = {
       ]
     }
   },
-
+"투운사 자격증": {
+    roadmap: [
+      { week: 1, phase: "기초", focus: "법규 기초", activities: ["법규 학습", "용어 정리"] },
+      { week: 2, phase: "심화", focus: "시험 대비", activities: ["기출문제 풀이", "약점 보완"] },
+      { week: 3, phase: "실전", focus: "모의고사", activities: ["모의고사", "오답 분석"] },
+      { week: 4, phase: "완성", focus: "최종 점검", activities: ["전체 복습", "시험 준비"] }
+    ],
+    missions: {
+      1: [ // 난이도 1 (쉬움)
+        {
+          title: "투운사 법규 기초 학습 - 1단원",
+          description: "투운사 자격증 제1단원(법규 기초) 학습. 주요 용어 10개 정리. 15분.",
+          activity_type: "법규학습",
+          duration_minutes: 15,
+          difficulty: 1,
+          measurement: "1단원 완료"
+        },
+        {
+          title: "관광지리 기본 개념 정리",
+          description: "국내 주요 관광지 20개의 특징 정리. 카드 만들기. 15분.",
+          activity_type: "지리학습",
+          duration_minutes: 15,
+          difficulty: 1,
+          measurement: "20개 지점 정리"
+        },
+        {
+          title: "자격증 시험 정보 정리",
+          description: "투운사 시험 일정, 출제 범위, 합격선 등 기본 정보 정리. 10분.",
+          activity_type: "시험준비",
+          duration_minutes: 10,
+          difficulty: 1,
+          measurement: "정보 정리 완료"
+        }
+      ],
+      2: [ // 난이도 2 (보통)
+        {
+          title: "투운사 법규 학습 - 2단원",
+          description: "제2단원(관광사업법) 상세 학습. 핵심 조항 15개 필기. 25분.",
+          activity_type: "법규학습",
+          duration_minutes: 25,
+          difficulty: 2,
+          measurement: "2단원 완료"
+        },
+        {
+          title: "기출문제 풀이 - 30문제",
+          description: "최근 3년 기출문제 30문제 풀이. 오답 표시. 30분.",
+          activity_type: "문제풀이",
+          duration_minutes: 30,
+          difficulty: 2,
+          measurement: "30문제 완료"
+        },
+        {
+          title: "관광지리 + 문화상식 통합 정리",
+          description: "관광지별 역사, 문화, 특산품 정리. 50개 지점. 25분.",
+          activity_type: "지리학습",
+          duration_minutes: 25,
+          difficulty: 2,
+          measurement: "50개 지점 완료"
+        }
+      ],
+      3: [ // 난이도 3 (어려움)
+        {
+          title: "법규 전체 복습 및 모의고사 풀이",
+          description: "1~4단원 전체 복습 후 모의고사 60문제 풀이. 50분.",
+          activity_type: "모의고사",
+          duration_minutes: 50,
+          difficulty: 3,
+          measurement: "60문제 완료"
+        },
+        {
+          title: "오답 분석 및 약점 보강 - 집중 학습",
+          description: "지난 기출문제 오답 20개를 분석하고 관련 내용 심화 학습. 40분.",
+          activity_type: "문제풀이",
+          duration_minutes: 40,
+          difficulty: 3,
+          measurement: "20개 오답 분석 완료"
+        },
+        {
+          title: "최종 모의고사 + 채점 + 분석",
+          description: "최종 모의고사 60문제 풀이, 채점, 오답 분석까지 완료. 60분.",
+          activity_type: "모의고사",
+          duration_minutes: 60,
+          difficulty: 3,
+          measurement: "모의고사 완료"
+        }
+      ]
+    }
+  },
   "책 30분 읽기": {
     roadmap: [
       { week: 1, phase: "기초", focus: "독서 습관", activities: ["가벼운 책 읽기", "요약하기"] },
