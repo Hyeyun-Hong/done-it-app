@@ -339,6 +339,97 @@ export const getTodayMissions = async (userId, goalId) => {
     return [];
   }
 };
+/**
+ * 미션 완료 처리
+ */
+export const completeMission = async (missionId) => {
+  try {
+    const missionRef = doc(db, "pilot_missions", missionId);
+    await updateDoc(missionRef, {
+      status: "completed",
+    });
+  } catch (error) {
+    console.error("Complete mission error:", error);
+    throw error;
+  }
+};
+
+/**
+ * 미션 피드백 저장
+ */
+export const saveMissionFeedback = async (missionId, goalId, userId, feedback) => {
+  try {
+    const missionRef = doc(db, "pilot_missions", missionId);
+    await updateDoc(missionRef, {
+      feedback,
+      status: "feedback_recorded",
+    });
+
+    const goalRef = doc(db, "pilot_goals", goalId);
+    const goal = await getDoc(goalRef);
+
+    if (!goal.exists()) {
+      throw new Error("Goal not found");
+    }
+
+    const goalData = goal.data();
+    const updatedFeedbackHistory = [...(goalData.feedback_history || []), feedback];
+
+    await updateDoc(goalRef, {
+      feedback_history: updatedFeedbackHistory,
+    });
+
+    console.log(`💬 피드백 저장: ${feedback}`);
+    return true;
+  } catch (error) {
+    console.error("Save feedback error:", error);
+    throw error;
+  }
+};
+
+/**
+ * 파일럿 통계 조회
+ */
+export const getPilotStats = async (userId) => {
+  try {
+    const goal = await getPilotGoal(userId);
+    if (!goal) return null;
+
+    const q = query(
+      collection(db, "pilot_missions"),
+      where("userId", "==", userId),
+      where("goalId", "==", goal.id)
+    );
+
+    const querySnapshot = await getDocs(q);
+    const missions = querySnapshot.docs.map(doc => doc.data());
+
+    const totalMissions = missions.length;
+    const completedMissions = missions.filter(m => m.status === "completed").length;
+    const completionRate = totalMissions > 0 ? (completedMissions / totalMissions) * 100 : 0;
+
+    const feedbacks = missions.filter(m => m.feedback).map(m => m.feedback);
+    const downCount = feedbacks.filter(f => f === "down").length;
+    const goodCount = feedbacks.filter(f => f === "good").length;
+    const upCount = feedbacks.filter(f => f === "up").length;
+
+    return {
+      goal: goal.title,
+      totalMissions,
+      completedMissions,
+      completionRate: completionRate.toFixed(1),
+      currentDifficulty: goal.current_difficulty,
+      feedbackDistribution: {
+        down: downCount,
+        good: goodCount,
+        up: upCount,
+      },
+    };
+  } catch (error) {
+    console.error("Get pilot stats error:", error);
+    return null;
+  }
+};
  
 
 
