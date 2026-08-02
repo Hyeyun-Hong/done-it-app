@@ -177,88 +177,88 @@ export const missionDatabase = {
   },
 "투운사 자격증": {
     roadmap: [
-      { week: 1, phase: "기초", focus: "법규 기초", activities: ["법규 학습", "용어 정리"] },
-      { week: 2, phase: "심화", focus: "시험 대비", activities: ["기출문제 풀이", "약점 보완"] },
-      { week: 3, phase: "실전", focus: "모의고사", activities: ["모의고사", "오답 분석"] },
-      { week: 4, phase: "완성", focus: "최종 점검", activities: ["전체 복습", "시험 준비"] }
+      { week: 1, phase: "기초", focus: "금융 용어 익히기", activities: ["금융시장 구조", "투자상품 종류", "주식시장", "채권", "펀드"] },
+      { week: 2, phase: "심화", focus: "계산 개념 학습", activities: ["주식 가치평가", "채권 계산", "파생상품", "옵션 전략", "대체투자"] },
+      { week: 3, phase: "실전", focus: "포트폴리오·세금·법규", activities: ["포트폴리오 이론", "세금", "법규", "계산문제 100문제"] },
+      { week: 4, phase: "완성", focus: "기출 반복 + 오답 보완", activities: ["기출 5회", "오답 복습", "틀린 문제만", "실전 모의고사"] }
     ],
     missions: {
-      1: [ // 난이도 1 (쉬움)
+      1: [ // 난이도 1 (1주차 - 금융 용어)
         {
-          title: "투운사 법규 기초 학습 - 1단원",
-          description: "투운사 자격증 제1단원(법규 기초) 학습. 주요 용어 10개 정리. 15분.",
-          activity_type: "법규학습",
-          duration_minutes: 15,
+          title: "금융시장 기초 + 금융기관 학습",
+          description: "직접금융/간접금융 개념, 금융기관 종류, 금리 개념 학습. 정리 후 기초 문제 20문제 풀이. 90분.",
+          activity_type: "이론학습",
+          duration_minutes: 90,
           difficulty: 1,
-          measurement: "1단원 완료"
+          measurement: "금융시장 구조 완료 + 20문제"
         },
         {
-          title: "관광지리 기본 개념 정리",
-          description: "국내 주요 관광지 20개의 특징 정리. 카드 만들기. 15분.",
-          activity_type: "지리학습",
-          duration_minutes: 15,
+          title: "투자상품 종류 정리 (예금·채권·주식·펀드)",
+          description: "각 상품의 특징, 수익률, 위험도를 비교 정리. 차이점 표 만들기. 기초 문제 20문제. 80분.",
+          activity_type: "이론학습",
+          duration_minutes: 80,
           difficulty: 1,
-          measurement: "20개 지점 정리"
+          measurement: "4가지 상품 완료 + 20문제"
         },
         {
-          title: "자격증 시험 정보 정리",
-          description: "투운사 시험 일정, 출제 범위, 합격선 등 기본 정보 정리. 10분.",
-          activity_type: "시험준비",
-          duration_minutes: 10,
+          title: "주식시장·채권·펀드 종류 학습",
+          description: "KOSPI/KOSDAQ/ETF/ETN, 채권 종류(국채/회사채), 펀드 구분(공모/사모/개방형/폐쇄형) 학습. 30문제. 75분.",
+          activity_type: "이론학습",
+          duration_minutes: 75,
           difficulty: 1,
-          measurement: "정보 정리 완료"
+          measurement: "3개 파트 완료 + 30문제"
         }
       ],
-      2: [ // 난이도 2 (보통)
+      2: [ // 난이도 2 (2주차 - 계산 개념)
         {
-          title: "투운사 법규 학습 - 2단원",
-          description: "제2단원(관광사업법) 상세 학습. 핵심 조항 15개 필기. 25분.",
-          activity_type: "법규학습",
-          duration_minutes: 25,
+          title: "주식 가치평가 계산 (PER·PBR·EPS·ROE)",
+          description: "PER/PBR/EPS 계산 방법 학습. 실제 계산 문제 20문제. 오답 표시. 100분.",
+          activity_type: "계산학습",
+          duration_minutes: 100,
           difficulty: 2,
-          measurement: "2단원 완료"
+          measurement: "4가지 지표 계산 + 20문제"
         },
         {
-          title: "기출문제 풀이 - 30문제",
-          description: "최근 3년 기출문제 30문제 풀이. 오답 표시. 30분.",
-          activity_type: "문제풀이",
-          duration_minutes: 30,
+          title: "채권·파생상품 계산 (현재가치·수익률·옵션 손익)",
+          description: "채권 현재가치, 만기수익률 계산. 선물/옵션/스왑 개념. 옵션 손익 구조 그리기. 계산 25문제. 110분.",
+          activity_type: "계산학습",
+          duration_minutes: 110,
           difficulty: 2,
-          measurement: "30문제 완료"
+          measurement: "채권+파생상품 계산 완료 + 25문제"
         },
         {
-          title: "관광지리 + 문화상식 통합 정리",
-          description: "관광지별 역사, 문화, 특산품 정리. 50개 지점. 25분.",
-          activity_type: "지리학습",
-          duration_minutes: 25,
+          title: "2주차 기출 1회 풀이 + 오답 분석",
+          description: "실제 기출문제 60문제를 시간 제한 없이 풀기. 채점 후 틀린 문제 10개 분석. 120분.",
+          activity_type: "기출풀이",
+          duration_minutes: 120,
           difficulty: 2,
-          measurement: "50개 지점 완료"
+          measurement: "기출 1회 완료 + 오답 분석"
         }
       ],
-      3: [ // 난이도 3 (어려움)
+      3: [ // 난이도 3 (3~4주차 - 포트폴리오·법규·기출)
         {
-          title: "법규 전체 복습 및 모의고사 풀이",
-          description: "1~4단원 전체 복습 후 모의고사 60문제 풀이. 50분.",
-          activity_type: "모의고사",
-          duration_minutes: 50,
+          title: "포트폴리오 이론 + 세금 + 법규 집중 학습",
+          description: "포트폴리오 이론(베타/CAPM), 투자성과(샤프지수), 세금(배당/양도), 법규(자본시장법/불공정거래) 학습. 150분.",
+          activity_type: "이론학습",
+          duration_minutes: 150,
           difficulty: 3,
-          measurement: "60문제 완료"
+          measurement: "포트폴리오+세금+법규 완료"
         },
         {
-          title: "오답 분석 및 약점 보강 - 집중 학습",
-          description: "지난 기출문제 오답 20개를 분석하고 관련 내용 심화 학습. 40분.",
-          activity_type: "문제풀이",
-          duration_minutes: 40,
+          title: "계산문제 집중 100문제 풀이 + 오답",
+          description: "3주차 전 범위 계산문제만 100문제 풀이. 모든 오답에 대해 풀이 과정 정리. 120분.",
+          activity_type: "계산학습",
+          duration_minutes: 120,
           difficulty: 3,
-          measurement: "20개 오답 분석 완료"
+          measurement: "100문제 완료 + 오답 정리"
         },
         {
-          title: "최종 모의고사 + 채점 + 분석",
-          description: "최종 모의고사 60문제 풀이, 채점, 오답 분석까지 완료. 60분.",
-          activity_type: "모의고사",
-          duration_minutes: 60,
+          title: "기출 2~3회 연속 풀이 + 오답 복습",
+          description: "기출 2~3회(총 120문제)를 실전처럼 시간 재고 풀이. 모든 틀린 문제 분석 정리. 180분.",
+          activity_type: "기출풀이",
+          duration_minutes: 180,
           difficulty: 3,
-          measurement: "모의고사 완료"
+          measurement: "기출 2회 완료 + 오답 정리"
         }
       ]
     }
